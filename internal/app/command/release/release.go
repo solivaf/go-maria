@@ -121,10 +121,21 @@ func updateVersion(version string, index int, isSnapshot bool) string {
 	minorString := numbers[index]
 	incrementedVersion := incrementVersion(minorString)
 	numbers[index] = incrementedVersion
-	return getUpdatedVersion(version, numbers, isSnapshot)
+	setZeroValues(index, numbers)
+	return getUpdatedVersion(version, numbers)
 }
 
-func getUpdatedVersion(version string, numbersInVersion []string, isSnapshot bool) string {
+func setZeroValues(index int, numbers []string) {
+	if index == majorIndex {
+		numbers[patchIndex] = "0"
+		numbers[minorIndex] = "0"
+	}
+	if index == minorIndex {
+		numbers[patchIndex] = "0"
+	}
+}
+
+func getUpdatedVersion(version string, numbersInVersion []string) string {
 	versionJoined := strings.Join(numbersInVersion, ".")
 	versionJoined += "-SNAPSHOT"
 	if strings.HasPrefix(version, "v") {
