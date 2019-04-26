@@ -2,7 +2,7 @@ package init
 
 import (
 	"fmt"
-	"go-maria/internal/app/file"
+	"github.com/solivaf/go-maria/internal/app/file"
 	"io/ioutil"
 	"os"
 	"path/filepath"

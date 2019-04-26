@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
-	_init "go-maria/internal/app/command/init"
-	_release "go-maria/internal/app/command/release"
+	_init "github.com/solivaf/go-maria/internal/app/command/init"
+	_release "github.com/solivaf/go-maria/internal/app/command/release"
 )
 
 type Config struct {

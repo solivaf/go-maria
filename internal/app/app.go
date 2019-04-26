@@ -1,10 +1,10 @@
 package app
 
 import (
-	"go-maria/internal/app/command"
-	"go-maria/internal/app/config"
-	"go-maria/internal/app/module"
-	"go-maria/internal/app/vcs"
+	"github.com/solivaf/go-maria/internal/app/command"
+	"github.com/solivaf/go-maria/internal/app/config"
+	"github.com/solivaf/go-maria/internal/app/module"
+	"github.com/solivaf/go-maria/internal/app/vcs"
 )
 
 type App struct {

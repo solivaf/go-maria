@@ -1,4 +1,4 @@
-module go-maria
+module github.com/solivaf/go-maria
 
 go 1.12
 

@@ -2,8 +2,8 @@ package release
 
 import (
 	"github.com/pelletier/go-toml"
-	"go-maria/internal/app/file"
-	_git "go-maria/internal/app/git"
+	"github.com/solivaf/go-maria/internal/app/file"
+	_git "github.com/solivaf/go-maria/internal/app/git"
 	"strconv"
 	"strings"
 )

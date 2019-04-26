@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"go-maria/internal/app"
-	"go-maria/internal/app/config"
+	"github.com/solivaf/go-maria/internal/app"
+	"github.com/solivaf/go-maria/internal/app/config"
 	"os"
 )
 

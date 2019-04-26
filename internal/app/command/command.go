@@ -1,9 +1,9 @@
 package command
 
 import (
-	_init "go-maria/internal/app/command/init"
-	"go-maria/internal/app/command/release"
-	"go-maria/internal/app/config"
+	_init "github.com/solivaf/go-maria/internal/app/command/init"
+	"github.com/solivaf/go-maria/internal/app/command/release"
+	"github.com/solivaf/go-maria/internal/app/config"
 )
 
 type Command interface {
