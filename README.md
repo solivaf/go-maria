@@ -13,14 +13,14 @@ If you need any other platform integration, please open an issue so we can atten
 ## Usage
 Install the binary into your $GOPATH running. Make sure is your $GOPATH/bin into $PATH variable on your OS.
 ```bash
-#Install gomaria CLI into $GOPATH
+#Install go-maria CLI into $GOPATH
 $ go install github.com/solivaf/go-maria/
 
 #Navigate into your project root
 $ cd <project-root>
  
 #Init a your project with maria configuration
-$ <project-root> gomaria init
+$ <project-root> go-maria init
 ```
 
 After running **init** command will be created a file named **.goversion.toml**. 
@@ -48,13 +48,13 @@ With all settled now you can run release command to create a tag and commit a ne
 
 ```bash
 #Release a new major version
-$ gomaria --release --major
+$ go-maria --release --major
 
 #Release a new minor version
-$ gomaria --release --minor
+$ go-maria --release --minor
 
 #Release a new patch version
-$ gomaria --release --patch
+$ go-maria --release --patch
 ```
 
 Running one of these commands above, maria will create a new tag increment a version according SemVer and publish this 
@@ -62,5 +62,5 @@ into your remote. If you want avoid the publication into remote you can set the 
 
 ```bash
 #Release a new version, but don't push to remote
-$ gomaria --release --patch --skip-publish
+$ go-maria --release --patch --skip-publish
 ```
