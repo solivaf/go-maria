@@ -1,4 +1,4 @@
 
 [module]
   name = "go-maria"
-  version = "v0.6.0-SNAPSHOT"
+  version = "v0.6.0"
