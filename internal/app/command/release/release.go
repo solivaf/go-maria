@@ -54,9 +54,7 @@ func (c *Command) releaseVersion(tomlFile *toml.Tree) error {
 	if err := c.Git.CommitChanges(commitMessage); err != nil {
 		return err
 	}
-	appName := c.getAppName(tomlFile)
-	tagName := appName + "-" + updatedVersion
-	if err := c.Git.CreateTag(tagName); err != nil {
+	if err := c.Git.CreateTag(updatedVersion); err != nil {
 		return err
 	}
 	return nil
