@@ -1,6 +1,7 @@
 package release
 
 import (
+	"fmt"
 	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/app/file"
 	_git "github.com/solivaf/go-maria/internal/app/git"
@@ -121,7 +122,9 @@ func updateVersion(version string, index int, isSnapshot bool) string {
 	minorString := numbers[index]
 	incrementedVersion := incrementVersion(minorString)
 	numbers[index] = incrementedVersion
+	fmt.Println(numbers)
 	setZeroValues(index, numbers)
+	fmt.Println(numbers)
 	return getUpdatedVersion(version, numbers)
 }
 
