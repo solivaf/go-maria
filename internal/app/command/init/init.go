@@ -15,10 +15,16 @@ func Execute(c *cli.Context) error {
 		return errors.New("Missing module name")
 	}
 	absPath := file.GetAbsolutePath()
-	initialFile := createInitFile(absPath)
+	initialFile, err := createInitFile(absPath)
+	if err != nil {
+		return err
+	}
 
 	appName := c.Args().First()
-	templateFile := openInitTemplate(absPath, appName)
+	templateFile, err := openInitTemplate(absPath, appName)
+	if err != nil {
+		return err
+	}
 	writeContent(templateFile, initialFile)
 
 	return nil
@@ -30,20 +36,20 @@ func writeContent(source *toml.Tree, destination *os.File) {
 	}
 }
 
-func openInitTemplate(path, appName string) *toml.Tree {
+func openInitTemplate(path, appName string) (*toml.Tree, error) {
 	tomlFile, err := toml.LoadFile(path + "/templates/init.toml")
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
 	module := tomlFile.Get("module").(*toml.Tree)
 	module.Set("name", appName)
 	tomlFile.Set("module", module)
 
-	return tomlFile
+	return tomlFile, nil
 }
 
-func createInitFile(path string) *os.File {
+func createInitFile(path string) (*os.File, error) {
 	return file.CreateInitialFile(path)
 }

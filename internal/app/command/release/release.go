@@ -3,7 +3,7 @@ package release
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/app/file"
-	"github.com/solivaf/go-maria/internal/app/git"
+	"github.com/solivaf/go-maria/internal/pkg/git"
 	"gopkg.in/urfave/cli.v2"
 	"strconv"
 	"strings"
