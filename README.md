@@ -20,7 +20,7 @@ $ go install github.com/solivaf/go-maria/
 $ cd <project-root>
  
 #Init a your project with maria configuration
-$ <project-root> go-maria init
+$ <project-root> go-maria init <module-name>
 ```
 
 After running **init** command will be created a file named **.goversion.toml**. 
@@ -48,13 +48,13 @@ With all settled now you can run release command to create a tag and commit a ne
 
 ```bash
 #Release a new major version
-$ go-maria --release --major
+$ go-maria release major
 
 #Release a new minor version
-$ go-maria --release --minor
+$ go-maria release minor
 
 #Release a new patch version
-$ go-maria --release --patch
+$ go-maria release patch
 ```
 
 Running one of these commands above, maria will create a new tag increment a version according SemVer and publish this 
@@ -62,5 +62,7 @@ into your remote. If you want avoid the publication into remote you can set the 
 
 ```bash
 #Release a new version, but don't push to remote
-$ go-maria --release --patch --skip-publish
+$ go-maria release patch skip-push
 ```
+
+For more information use go-maria --help or -h.
