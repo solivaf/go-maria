@@ -3,7 +3,8 @@ package release
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/app/file"
-	_git "github.com/solivaf/go-maria/internal/app/git"
+	"github.com/solivaf/go-maria/internal/app/git"
+	"gopkg.in/urfave/cli.v2"
 	"strconv"
 	"strings"
 )
@@ -11,6 +12,8 @@ import (
 const majorIndex = 0
 const minorIndex = 1
 const patchIndex = 2
+const snapshotSuffix = "-SNAPSHOT"
+const versionPrefix = "v"
 
 type Config struct {
 	Patch       *bool
@@ -19,58 +22,65 @@ type Config struct {
 	SkipPublish *bool
 }
 
-const (
-	releaseMessage              = "[gomaria] - releasing version "
-	prepareToNextReleaseMessage = "[gomaria] - preparing for next release "
-)
 
-type Command struct {
-	*Config
-	_git.Git
+func MajorVersion(skipPush bool) error {
+	return newVersion(majorIndex, skipPush)
 }
 
-func (c *Command) Execute() error {
+func MinorVersion(skipPush bool) error {
+	return newVersion(minorIndex, skipPush)
+}
+
+func PatchVersion(skipPush bool) error {
+	return newVersion(patchIndex, skipPush)
+}
+
+func SkipPush(c *cli.Context) bool {
+	return c.NArg() > 0 && c.Args().First() == "skip-push"
+}
+
+func newVersion(versionIndex int, skipPush bool) error {
 	tomlFile := file.LoadTomlFile(file.GetAbsolutePath())
-	if err := c.releaseVersion(tomlFile); err != nil {
-		return err
-	}
-	if err := c.prepareFileToNextRelease(tomlFile); err != nil {
-		return err
-	}
-	if !*c.Config.SkipPublish {
-		return c.Git.Push()
-	}
-
-	return nil
-}
-
-func (c *Command) releaseVersion(tomlFile *toml.Tree) error {
-	updatedVersion := c.getUpdatedVersion(tomlFile, false)
-	if err := c.updateTomlFileVersion(tomlFile, updatedVersion); err != nil {
+	if err := version(tomlFile, versionIndex); err != nil {
 		return err
 	}
 
-	commitMessage := releaseMessage + updatedVersion
-	if err := c.Git.CommitChanges(commitMessage); err != nil {
+	if err := prepareToNextRelease(tomlFile, versionIndex); err != nil {
 		return err
 	}
-	if err := c.Git.CreateTag(updatedVersion); err != nil {
-		return err
+
+	if !skipPush {
+		return git.Push()
 	}
 	return nil
 }
 
-func (c *Command) prepareFileToNextRelease(tomlFile *toml.Tree) error {
-	updatedVersion := c.getUpdatedVersion(tomlFile, true)
-	if err := c.updateTomlFileVersion(tomlFile, updatedVersion); err != nil {
+func version(tomlFile *toml.Tree, index int) error {
+	versionReleased := getUpdatedVersionFromTomlFile(tomlFile, index, false)
+	if err := updateTomlFileVersion(tomlFile, versionReleased); err != nil {
+		return err
+	}
+	commitMessage := git.ReleaseVersionCommitMessage(versionReleased)
+	if err := git.CommitChanges(commitMessage); err != nil {
+		return err
+	}
+	if err := git.CreateTag(versionReleased); err != nil {
+		return err
+	}
+	return nil
+}
+
+func prepareToNextRelease(tomlFile *toml.Tree, index int) error {
+	versionReleased := getUpdatedVersionFromTomlFile(tomlFile, index, true)
+	if err := updateTomlFileVersion(tomlFile, versionReleased); err != nil {
 		return err
 	}
 
-	commitMessage := prepareToNextReleaseMessage + updatedVersion
-	return c.CommitChanges(commitMessage)
+	commitMessage := git.PrepareVersionToNextReleaseMessage(versionReleased)
+	return git.CommitChanges(commitMessage)
 }
 
-func (c *Command) updateTomlFileVersion(tomlFile *toml.Tree, version string) error {
+func updateTomlFileVersion(tomlFile *toml.Tree, version string) error {
 	module := tomlFile.Get("module").(*toml.Tree)
 	module.Set("version", version)
 	tomlFile.Set("module", module)
@@ -83,38 +93,20 @@ func (c *Command) updateTomlFileVersion(tomlFile *toml.Tree, version string) err
 	return nil
 }
 
-func (c *Command) getAppName(tree *toml.Tree) string {
-	scm := tree.Get("module").(*toml.Tree)
-	return scm.Get("name").(string)
-}
-
-func (c *Command) getUpdatedVersion(tree *toml.Tree, isSnapshot bool) string {
-	module := tree.Get("module").(*toml.Tree)
-	v := module.Get("version").(string)
-
-	updatedVersion := c.getUpdatedVersionByArg(v, isSnapshot)
+func getUpdatedVersionFromTomlFile(tomlFile *toml.Tree, index int, isSnapshot bool) string {
+	version := file.GetVersionFromTomlFile(tomlFile)
+	updatedVersion := getUpdatedVersionByArg(version, index, isSnapshot)
 	return updatedVersion
 }
 
-func (c *Command) getUpdatedVersionByArg(version string, isSnapshot bool) string {
-	if *c.Major {
-		versionUpdated := updateVersion(version, majorIndex, isSnapshot)
-		return versionUpdated
-	}
-	if *c.Minor {
-		versionUpdated := updateVersion(version, minorIndex, isSnapshot)
-		return versionUpdated
-	}
-	if *c.Patch {
-		versionUpdated := updateVersion(version, patchIndex, isSnapshot)
-		return versionUpdated
-	}
-	return version
+func getUpdatedVersionByArg(version string, index int, isSnapshot bool) string {
+	versionUpdated := updateVersion(version, index, isSnapshot)
+	return versionUpdated
 }
 
 func updateVersion(version string, index int, isSnapshot bool) string {
 	if !isSnapshot {
-		version = strings.Replace(version, "-SNAPSHOT", "", -1)
+		version = strings.Replace(version, snapshotSuffix, "", -1)
 		return version
 	}
 	numbers := getNumbersInVersion(version)
@@ -137,19 +129,20 @@ func setZeroValues(index int, numbers []string) {
 
 func getUpdatedVersion(version string, numbersInVersion []string) string {
 	versionJoined := strings.Join(numbersInVersion, ".")
-	versionJoined += "-SNAPSHOT"
-	if strings.HasPrefix(version, "v") {
-		return "v" + versionJoined
+
+	versionJoined += snapshotSuffix
+	if strings.HasPrefix(version, versionPrefix) {
+		return versionPrefix + versionJoined
 	}
 	return versionJoined
 }
 
 func getNumbersInVersion(version string) []string {
-	if strings.HasPrefix(version, "v") {
-		version = strings.Split(version, "v")[1]
+	if strings.HasPrefix(version, versionPrefix) {
+		version = strings.Split(version, versionPrefix)[1]
 	}
-	if strings.HasSuffix(version, "-SNAPSHOT") {
-		version = strings.TrimSuffix(version, "-SNAPSHOT")
+	if strings.HasSuffix(version, snapshotSuffix) {
+		version = strings.TrimSuffix(version, snapshotSuffix)
 	}
 	versionSplitted := strings.Split(version, ".")
 	return versionSplitted

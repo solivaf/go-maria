@@ -61,16 +61,10 @@ func GetAbsolutePath() string {
 	return absPath
 }
 
-func CreateFile(path, content string) error {
-	f, err := os.Create(getFilePath(path))
-	if err != nil {
-		panic(err)
-	}
-	if _, err := f.WriteString(content); err != nil {
-		panic(err)
-	}
-
-	return nil
+func GetVersionFromTomlFile(tomlFile *toml.Tree) string {
+	module := tomlFile.Get("module").(*toml.Tree)
+	v := module.Get("version").(string)
+	return v
 }
 
 func getFilePath(path string) string {

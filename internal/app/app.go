@@ -13,7 +13,7 @@ type App struct {
 }
 
 func ExecuteCommand(config config.Config) error {
-	cmd, err := command.CreateCommand(config)
+	cmd, err := command.CreateInit(config)
 	if err != nil {
 		return err
 	}

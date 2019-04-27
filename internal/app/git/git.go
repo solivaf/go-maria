@@ -8,10 +8,13 @@ import (
 	"sync"
 )
 
-type Git struct {
-}
+const (
+	releaseMessage              = "[gomaria] - releasing version "
+	prepareToNextReleaseMessage = "[gomaria] - preparing for next release "
+)
 
-func (g *Git) Push() error {
+
+func Push() error {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
@@ -34,7 +37,7 @@ func (g *Git) Push() error {
 	return nil
 }
 
-func (g *Git) CommitChanges(message string) error {
+func CommitChanges(message string) error {
 	if err := addUntrackedFiles(); err != nil {
 		panic(err)
 	}
@@ -44,11 +47,20 @@ func (g *Git) CommitChanges(message string) error {
 	return nil
 }
 
-func (g *Git) CreateTag(tagName string) error {
+func CreateTag(tagName string) error {
 	if err := createTag(tagName); err != nil {
 		return err
 	}
 	return nil
+}
+
+func ReleaseVersionCommitMessage(version string) string {
+	return releaseMessage + version
+
+}
+
+func PrepareVersionToNextReleaseMessage(version string) string {
+	return prepareToNextReleaseMessage + version
 }
 
 func createTag(tagName string) error {

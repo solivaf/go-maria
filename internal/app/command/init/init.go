@@ -1,51 +1,49 @@
 package init
 
 import (
+	"errors"
 	"fmt"
+	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/app/file"
-	"io/ioutil"
+	"gopkg.in/urfave/cli.v2"
+	"log"
 	"os"
-	"path/filepath"
 )
 
-type Config struct {
-	AppName *string
-}
+func Execute(c *cli.Context) error {
+	if c.Args().First() == "" {
+		return errors.New("Missing module name")
+	}
+	absPath := file.GetAbsolutePath()
+	initialFile := createInitFile(absPath)
 
-type Command struct {
-	*Config
-}
-
-func (c *Command) Execute() error {
-	localPath := os.Args[0]
-	absPath, _ := filepath.Abs(filepath.Dir(localPath))
-	file := c.createInitFile(absPath)
-	templateFile := c.openInitTemplate(absPath)
-
-	c.WriteContent(templateFile, file)
+	appName := c.Args().First()
+	templateFile := openInitTemplate(absPath, appName)
+	writeContent(templateFile, initialFile)
 
 	return nil
 }
 
-func (c *Command) WriteContent(source, destination *os.File) {
-	contentBytes, err := ioutil.ReadAll(source)
-	if err != nil {
-		panic(err)
+func writeContent(source *toml.Tree, destination *os.File) {
+	if _, err := source.WriteTo(destination); err != nil {
+		log.Fatal(err)
 	}
-
-	destination.Write(contentBytes)
 }
 
-
-func (c *Command) openInitTemplate(path string) *os.File {
-	templateFile, err := os.Open(path + "/templates/init.tmpl")
+func openInitTemplate(path, appName string) *toml.Tree {
+	tomlFile, err := toml.LoadFile(path + "/templates/init.toml")
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil
 	}
 
-	return templateFile
+	module := tomlFile.Get("module").(*toml.Tree)
+	module.Set("name", appName)
+	tomlFile.Set("module", module)
+
+	return tomlFile
 }
 
-func (c *Command) createInitFile(path string) *os.File {
+func createInitFile(path string) *os.File {
 	return file.CreateInitialFile(path)
 }

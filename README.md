@@ -29,7 +29,7 @@ In this file will be configured your project's integrations. Here is an example 
 ```toml
 
 [module]
-  name = "app-name"
+  name = "module-name"
   version = "v0.0.1-SNAPSHOT"
 
 ```
