@@ -13,7 +13,6 @@ const (
 	prepareToNextReleaseMessage = "[gomaria] - preparing for next release "
 )
 
-
 func Push() error {
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -39,10 +38,10 @@ func Push() error {
 
 func CommitChanges(message string) error {
 	if err := addUntrackedFiles(); err != nil {
-		panic(err)
+		return err
 	}
 	if err := commitLocally(message); err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }

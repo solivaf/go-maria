@@ -9,19 +9,13 @@ import (
 	"strings"
 )
 
-const majorIndex = 0
-const minorIndex = 1
-const patchIndex = 2
-const snapshotSuffix = "-SNAPSHOT"
-const versionPrefix = "v"
-
-type Config struct {
-	Patch       *bool
-	Minor       *bool
-	Major       *bool
-	SkipPublish *bool
-}
-
+const (
+	majorIndex     = 0
+	minorIndex     = 1
+	patchIndex     = 2
+	snapshotSuffix = "-SNAPSHOT"
+	versionPrefix  = "v"
+)
 
 func MajorVersion(skipPush bool) error {
 	return newVersion(majorIndex, skipPush)
@@ -95,11 +89,11 @@ func updateTomlFileVersion(tomlFile *toml.Tree, version string) error {
 
 func getUpdatedVersionFromTomlFile(tomlFile *toml.Tree, index int, isSnapshot bool) string {
 	version := file.GetVersionFromTomlFile(tomlFile)
-	updatedVersion := getUpdatedVersionByArg(version, index, isSnapshot)
+	updatedVersion := getUpdatedVersionByIndex(version, index, isSnapshot)
 	return updatedVersion
 }
 
-func getUpdatedVersionByArg(version string, index int, isSnapshot bool) string {
+func getUpdatedVersionByIndex(version string, index int, isSnapshot bool) string {
 	versionUpdated := updateVersion(version, index, isSnapshot)
 	return versionUpdated
 }
@@ -114,7 +108,7 @@ func updateVersion(version string, index int, isSnapshot bool) string {
 	incrementedVersion := incrementVersion(minorString)
 	numbers[index] = incrementedVersion
 	setZeroValues(index, numbers)
-	return getUpdatedVersion(version, numbers)
+	return prepareVersionToNextRelease(version, numbers)
 }
 
 func setZeroValues(index int, numbers []string) {
@@ -127,7 +121,7 @@ func setZeroValues(index int, numbers []string) {
 	}
 }
 
-func getUpdatedVersion(version string, numbersInVersion []string) string {
+func prepareVersionToNextRelease(version string, numbersInVersion []string) string {
 	versionJoined := strings.Join(numbersInVersion, ".")
 
 	versionJoined += snapshotSuffix
@@ -149,10 +143,10 @@ func getNumbersInVersion(version string) []string {
 }
 
 func incrementVersion(version string) string {
-	major, err := strconv.Atoi(version)
+	versionInt, err := strconv.Atoi(version)
 	if err != nil {
 		panic(err)
 	}
-	major += 1
-	return strconv.Itoa(major)
+	versionInt += 1
+	return strconv.Itoa(versionInt)
 }
