@@ -2,6 +2,7 @@ package git
 
 import (
 	"errors"
+	"fmt"
 	"github.com/solivaf/go-maria/internal/pkg/command"
 	"os/exec"
 	"strings"
@@ -21,6 +22,7 @@ func Push() error {
 		defer wg.Done()
 		if _, _err := pushCommits(); _err != nil {
 			err = _err
+			fmt.Println(err.Error())
 		}
 	}()
 
@@ -29,6 +31,7 @@ func Push() error {
 		if lastTag, _err := getLastTag(); _err == nil {
 			if _, _err := pushTag(lastTag); _err != nil {
 				err = _err
+				fmt.Println(err.Error())
 			}
 		}
 	}()
