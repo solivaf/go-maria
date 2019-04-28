@@ -46,15 +46,16 @@ func Push() error {
 
 func CommitChanges(message string) error {
 	log.Println("Committing git changes")
-	message, err := addUntrackedFiles()
-	log.Println(message)
+	cmdMessage, err := addUntrackedFiles()
+	log.Println(cmdMessage)
 	if err != nil {
 		return err
 	}
 
-	message, err = commitLocally(message)
-	log.Println(message)
+	cmdMessage, err = commitLocally(message)
+	log.Println(cmdMessage)
 	if err != nil {
+		log.Fatalln(err.Error())
 		return err
 	}
 	return nil
@@ -100,6 +101,7 @@ func commitLocally(message string) (string, error) {
 	cmd := exec.Command("git", "commit", "-m", message)
 	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
 	if err := cmd.Run(); err != nil {
+		log.Fatalln(stdErr.String())
 		return "", errors.New(stdErr.String())
 	}
 	return stdOut.String(), nil

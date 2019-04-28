@@ -59,16 +59,20 @@ func (r *ReleaseService) ReleasePatch(push bool) error {
 
 func (r *ReleaseService) newVersion(versionIndex int, push bool) error {
 	if err := r.version(versionIndex); err != nil {
+		log.Fatalln(err.Error())
 		return err
 	}
 
 	if err := r.prepareToNextRelease(versionIndex); err != nil {
+		log.Fatalln(err.Error())
 		return err
 	}
 
 	if push {
-		err := r.pushVersion()
-		return err
+		if err := r.pushVersion(); err != nil {
+			log.Fatalln(err.Error())
+			return err
+		}
 	}
 	return nil
 }
