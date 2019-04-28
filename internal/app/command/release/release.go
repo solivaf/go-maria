@@ -3,10 +3,12 @@ package release
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/app/file"
-	"github.com/solivaf/go-maria/internal/pkg/git"
+	"github.com/solivaf/go-maria/internal/pkg/command/docker"
+	"github.com/solivaf/go-maria/internal/pkg/command/git"
 	"gopkg.in/urfave/cli.v2"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -44,9 +46,37 @@ func newVersion(versionIndex int, skipPush bool) error {
 	}
 
 	if !skipPush {
-		return git.Push()
+		err := pushVersion(tomlFile.Has("docker"))
+		return err
 	}
 	return nil
+}
+
+func pushVersion(hasDocker bool) error {
+	var wg sync.WaitGroup
+	var err error
+	wg.Add(1)
+	go pushGit(&wg, err)
+	if hasDocker {
+		wg.Add(1)
+		go pushDocker(&wg, err)
+	}
+	wg.Wait()
+	return err
+}
+
+func pushDocker(wg *sync.WaitGroup, err error) {
+	defer wg.Done()
+	if _err := docker.ReleaseNewImage(); _err != nil {
+		err = _err
+	}
+}
+
+func pushGit(wg *sync.WaitGroup, err error) {
+	defer wg.Done()
+	if _err := git.Push(); _err != nil {
+		err = _err
+	}
 }
 
 func version(tomlFile *toml.Tree, index int) error {

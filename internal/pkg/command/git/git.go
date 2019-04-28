@@ -1,9 +1,8 @@
 package git
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
+	"github.com/solivaf/go-maria/internal/pkg/command"
 	"os/exec"
 	"strings"
 	"sync"
@@ -16,25 +15,26 @@ const (
 
 func Push() error {
 	var wg sync.WaitGroup
+	var err error
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		if _, err := pushCommits(); err != nil {
-			fmt.Println(err.Error())
+		if _, _err := pushCommits(); _err != nil {
+			err = _err
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		if lastTag, err := getLastTag(); err == nil {
-			if _, err := pushTag(lastTag); err != nil {
-				fmt.Println(err.Error())
+		if lastTag, _err := getLastTag(); _err == nil {
+			if _, _err := pushTag(lastTag); _err != nil {
+				err = _err
 			}
 		}
 	}()
 
 	wg.Wait()
-	return nil
+	return err
 }
 
 func CommitChanges(message string) error {
@@ -45,6 +45,16 @@ func CommitChanges(message string) error {
 		return err
 	}
 	return nil
+}
+
+func GetLatestTag() (string, error) {
+	cmd := exec.Command("git", "describe", "--abbrev=0", "--tags")
+	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
+		return "", errors.New(stdErr.String())
+	}
+
+	return stdOut.String(), nil
 }
 
 func CreateTag(tagName string) error {
@@ -64,36 +74,36 @@ func PrepareVersionToNextReleaseMessage(version string) string {
 }
 
 func createTag(tagName string) (string, error) {
-	command := exec.Command("git", "tag", tagName)
-	stdOut, stdErr := getStdOutAndStdErr(command)
-	if err := command.Run(); err != nil {
+	cmd := exec.Command("git", "tag", tagName)
+	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
 		return "", errors.New(stdErr.String())
 	}
 	return stdOut.String(), nil
 }
 
 func commitLocally(message string) (string, error) {
-	command := exec.Command("git", "commit", "-m", message)
-	stdOut, stdErr := getStdOutAndStdErr(command)
-	if err := command.Run(); err != nil {
+	cmd := exec.Command("git", "commit", "-m", message)
+	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
 		return "", errors.New(stdErr.String())
 	}
 	return stdOut.String(), nil
 }
 
 func addUntrackedFiles() (string, error) {
-	command := exec.Command("git", "add", ".")
-	stdOut, stdErr := getStdOutAndStdErr(command)
-	if err := command.Run(); err != nil {
+	cmd := exec.Command("git", "add", ".")
+	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
 		return "", errors.New(stdErr.String())
 	}
 	return stdOut.String(), nil
 }
 
 func pushCommits() (string, error) {
-	command := exec.Command("git", "push", "origin", "master")
-	out, stdErr := getStdOutAndStdErr(command)
-	if err := command.Run(); err != nil {
+	cmd := exec.Command("git", "push", "origin", "master")
+	out, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
 		return "", errors.New(stdErr.String())
 	}
 	return out.String(), nil
@@ -101,7 +111,7 @@ func pushCommits() (string, error) {
 
 func getLastTag() (string, error) {
 	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
-	out, outErr := getStdOutAndStdErr(cmd)
+	out, outErr := command.GetStdOutAndStdErr(cmd)
 	if err := cmd.Run(); err != nil {
 		return "", errors.New(outErr.String())
 	}
@@ -109,17 +119,10 @@ func getLastTag() (string, error) {
 	return strings.Replace(out.String(), "\n", "", -1), nil
 }
 
-func getStdOutAndStdErr(cmd *exec.Cmd) (bytes.Buffer, bytes.Buffer) {
-	var out, outErr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &outErr
-	return out, outErr
-}
-
 func pushTag(tagName string) (string, error) {
-	command := exec.Command("git", "push", "origin", tagName)
-	stdOut, stdErr := getStdOutAndStdErr(command)
-	if err := command.Run(); err != nil {
+	cmd := exec.Command("git", "push", "origin", tagName)
+	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	if err := cmd.Run(); err != nil {
 		return "", errors.New(stdErr.String())
 	}
 

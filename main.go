@@ -16,12 +16,6 @@ func main() {
 	gomaria.HideVersion = true
 	gomaria.Commands = []*cli.Command{command.CreateInit(), command.CreateRelease()}
 
-	//cfg := config.InitConfig()
-	//if err := app.ExecuteCommand(*cfg); err != nil {
-	//	fmt.Println(err.Error())
-	//	os.Exit(1)
-	//}
-
 	if err := gomaria.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
