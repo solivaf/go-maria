@@ -6,7 +6,6 @@ import (
 	"log"
 	"os/exec"
 	"strings"
-	"sync"
 )
 
 const (
@@ -15,33 +14,19 @@ const (
 )
 
 func Push() error {
-	var wg sync.WaitGroup
-	var err error
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		message, _err := pushCommits()
+	message, err := pushCommits()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	log.Println(message)
+	if lastTag, err := getLastTag(); err == nil {
+		message, err := pushTag(lastTag)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		log.Println(message)
-		if _err != nil {
-			err = _err
-			log.Fatal(err.Error())
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		if lastTag, _err := getLastTag(); _err == nil {
-			message, _err := pushTag(lastTag);
-			log.Println(message)
-			if _err != nil {
-				err = _err
-				log.Fatalln(err.Error())
-			}
-		}
-	}()
-
-	wg.Wait()
-	return err
+	}
+	return nil
 }
 
 func CommitChanges(message string) error {
