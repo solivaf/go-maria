@@ -9,11 +9,11 @@ import (
 )
 
 type DockerService struct {
-	dockerTree *toml.Tree
+	Tree *toml.Tree
 }
 
 type Docker interface {
-	ReleaseImage() (string, error)
+	ReleaseNewImage() (string, error)
 	TagVersion(imageId, gitTag string) (string, error)
 }
 
@@ -39,8 +39,8 @@ func (docker *DockerService) ReleaseNewImage() (string, error) {
 }
 
 func (docker *DockerService) buildImage() (imageId string, err error) {
-	buildDirectory := docker.dockerTree.Get("buildDirectory").(string)
-	isDockerCompose := docker.dockerTree.Get("dockerComposeFile").(bool)
+	buildDirectory := docker.Tree.Get("buildDirectory").(string)
+	isDockerCompose := docker.Tree.Get("dockerComposeFile").(bool)
 
 	var dockerCommand string
 	if isDockerCompose {
@@ -80,10 +80,10 @@ func (docker *DockerService) PushTag(tagName string) (string, error) {
 }
 
 func (docker *DockerService) buildTagName(latestGitTag string) string {
-	organization := docker.dockerTree.Get("organization").(string)
-	repository := docker.dockerTree.Get("repository").(string)
-	if docker.dockerTree.Has("tagPrefix") {
-		prefix := docker.dockerTree.Get("tagPrefix").(string)
+	organization := docker.Tree.Get("organization").(string)
+	repository := docker.Tree.Get("repository").(string)
+	if docker.Tree.Has("tagPrefix") {
+		prefix := docker.Tree.Get("tagPrefix").(string)
 		return organization + "/" + repository + ":" + prefix + "-" + latestGitTag
 	}
 	return organization + "/" + repository + ":" + latestGitTag

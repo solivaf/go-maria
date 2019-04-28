@@ -8,7 +8,13 @@ import (
 	"path/filepath"
 )
 
-const fileName = ".goversion.toml"
+const (
+	fileName         = ".goversion.toml"
+	DockerKey        = "docker"
+	ModuleKey        = "module"
+	ModuleVersionKey = "version"
+	ModuleNameKey    = "name"
+)
 
 func OpenFile(path string) *os.File {
 	f, err := os.OpenFile(getFilePath(path), os.O_WRONLY|os.O_TRUNC, os.ModeAppend)

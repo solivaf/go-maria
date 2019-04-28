@@ -2,9 +2,9 @@ package release
 
 import (
 	"github.com/pelletier/go-toml"
-	"github.com/solivaf/go-maria/internal/app/file"
 	"github.com/solivaf/go-maria/internal/pkg/command/docker"
 	"github.com/solivaf/go-maria/internal/pkg/command/git"
+	"github.com/solivaf/go-maria/internal/pkg/file"
 	"gopkg.in/urfave/cli.v2"
 	"strconv"
 	"strings"
@@ -17,57 +17,77 @@ const (
 	patchIndex     = 2
 	snapshotSuffix = "-SNAPSHOT"
 	versionPrefix  = "v"
+	zeroVersion    = "0"
 )
 
-func MajorVersion(skipPush bool) error {
-	return newVersion(majorIndex, skipPush)
+type ReleaseService struct {
+	docker.Docker
+	FileTree *toml.Tree
 }
 
-func MinorVersion(skipPush bool) error {
-	return newVersion(minorIndex, skipPush)
+type Release interface {
+	SkipPush(context *cli.Context) bool
+	ReleaseMajor(push bool) error
+	ReleaseMinor(push bool) error
+	ReleasePatch(push bool) error
 }
 
-func PatchVersion(skipPush bool) error {
-	return newVersion(patchIndex, skipPush)
+func CreateRelease(tree *toml.Tree) Release {
+	r := &ReleaseService{FileTree: tree}
+	if tree.Has(file.DockerKey) {
+		r.Docker = &docker.DockerService{Tree: tree.Get(file.DockerKey).(*toml.Tree)}
+	}
+	return r
 }
 
-func SkipPush(c *cli.Context) bool {
-	return c.NArg() > 0 && c.Args().First() == "skip-push"
+func (r ReleaseService) SkipPush(context *cli.Context) bool {
+	return context.NArg() > 0 && context.Args().First() == "skip-push"
 }
 
-func newVersion(versionIndex int, skipPush bool) error {
-	tomlFile := file.LoadTomlFile(file.GetAbsolutePath())
-	if err := version(tomlFile, versionIndex); err != nil {
+func (r *ReleaseService) ReleaseMajor(push bool) error {
+	return r.newVersion(majorIndex, push)
+}
+
+func (r *ReleaseService) ReleaseMinor(push bool) error {
+	return r.newVersion(minorIndex, push)
+}
+
+func (r *ReleaseService) ReleasePatch(push bool) error {
+	return r.newVersion(patchIndex, push)
+}
+
+func (r *ReleaseService) newVersion(versionIndex int, push bool) error {
+	if err := r.version(versionIndex); err != nil {
 		return err
 	}
 
-	if err := prepareToNextRelease(tomlFile, versionIndex); err != nil {
+	if err := r.prepareToNextRelease(versionIndex); err != nil {
 		return err
 	}
 
-	if !skipPush {
-		err := pushVersion(tomlFile.Has("docker"))
+	if push {
+		err := r.pushVersion()
 		return err
 	}
 	return nil
 }
 
-func pushVersion(hasDocker bool) error {
+func (r *ReleaseService) pushVersion() error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
 	go pushGit(&wg, err)
-	if hasDocker {
+	if r.Docker != nil {
 		wg.Add(1)
-		go pushDocker(&wg, err)
+		go r.pushDocker(&wg, err)
 	}
 	wg.Wait()
 	return err
 }
 
-func pushDocker(wg *sync.WaitGroup, err error) {
+func (r *ReleaseService) pushDocker(wg *sync.WaitGroup, err error) {
 	defer wg.Done()
-	if _err := docker.ReleaseNewImage(); _err != nil {
+	if _, _err := r.Docker.ReleaseNewImage(); _err != nil {
 		err = _err
 	}
 }
@@ -79,9 +99,9 @@ func pushGit(wg *sync.WaitGroup, err error) {
 	}
 }
 
-func version(tomlFile *toml.Tree, index int) error {
-	versionReleased := getUpdatedVersionFromTomlFile(tomlFile, index, false)
-	if err := updateTomlFileVersion(tomlFile, versionReleased); err != nil {
+func (r *ReleaseService) version(index int) error {
+	versionReleased := r.getUpdatedVersionFromTomlFile(index, false)
+	if err := r.updateTomlFileVersion(versionReleased); err != nil {
 		return err
 	}
 	commitMessage := git.ReleaseVersionCommitMessage(versionReleased)
@@ -94,9 +114,9 @@ func version(tomlFile *toml.Tree, index int) error {
 	return nil
 }
 
-func prepareToNextRelease(tomlFile *toml.Tree, index int) error {
-	versionReleased := getUpdatedVersionFromTomlFile(tomlFile, index, true)
-	if err := updateTomlFileVersion(tomlFile, versionReleased); err != nil {
+func (r *ReleaseService) prepareToNextRelease(index int) error {
+	versionReleased := r.getUpdatedVersionFromTomlFile(index, true)
+	if err := r.updateTomlFileVersion(versionReleased); err != nil {
 		return err
 	}
 
@@ -104,21 +124,21 @@ func prepareToNextRelease(tomlFile *toml.Tree, index int) error {
 	return git.CommitChanges(commitMessage)
 }
 
-func updateTomlFileVersion(tomlFile *toml.Tree, version string) error {
-	module := tomlFile.Get("module").(*toml.Tree)
-	module.Set("version", version)
-	tomlFile.Set("module", module)
+func (r *ReleaseService) updateTomlFileVersion(version string) error {
+	module := r.FileTree.Get(file.ModuleKey).(*toml.Tree)
+	module.Set(file.ModuleVersionKey, version)
+	r.FileTree.Set(file.ModuleKey, module)
 
 	f := file.OpenFile(file.GetAbsolutePath())
-	if _, err := tomlFile.WriteTo(f); err != nil {
+	if _, err := r.FileTree.WriteTo(f); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func getUpdatedVersionFromTomlFile(tomlFile *toml.Tree, index int, isSnapshot bool) string {
-	version := file.GetVersionFromTomlFile(tomlFile)
+func (r *ReleaseService) getUpdatedVersionFromTomlFile(index int, isSnapshot bool) string {
+	version := file.GetVersionFromTomlFile(r.FileTree)
 	updatedVersion := getUpdatedVersionByIndex(version, index, isSnapshot)
 	return updatedVersion
 }
@@ -143,11 +163,11 @@ func updateVersion(version string, index int, isSnapshot bool) string {
 
 func setZeroValues(index int, numbers []string) {
 	if index == majorIndex {
-		numbers[patchIndex] = "0"
-		numbers[minorIndex] = "0"
+		numbers[patchIndex] = zeroVersion
+		numbers[minorIndex] = zeroVersion
 	}
 	if index == minorIndex {
-		numbers[patchIndex] = "0"
+		numbers[patchIndex] = zeroVersion
 	}
 }
 

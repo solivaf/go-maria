@@ -2,6 +2,7 @@ package patch
 
 import (
 	"github.com/solivaf/go-maria/internal/app/command/release"
+	"github.com/solivaf/go-maria/internal/pkg/file"
 	"gopkg.in/urfave/cli.v2"
 )
 
@@ -10,8 +11,10 @@ func Command() *cli.Command {
 }
 
 func execute(c *cli.Context) error {
-	if release.SkipPush(c) {
-		return release.PatchVersion(true)
+	tomlFile := file.LoadTomlFile(file.GetAbsolutePath())
+	r := release.CreateRelease(tomlFile)
+	if r.SkipPush(c) {
+		return r.ReleasePatch(false)
 	}
-	return release.PatchVersion(false)
+	return r.ReleasePatch(true)
 }

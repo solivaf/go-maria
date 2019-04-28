@@ -2,12 +2,3 @@
 [module]
   name = "go-maria"
   version = "v0.2.0-SNAPSHOT"
-
-[docker]
-  organization="go-maria"
-  repository="repository-A"
-  tagPrefix="go-maria"
-  buildDirectory="deployments/docker/"
-  registry="AWS"
-  releaseLatest=true
-  dockerCompose=true

@@ -2,6 +2,7 @@ package major
 
 import (
 	"github.com/solivaf/go-maria/internal/app/command/release"
+	"github.com/solivaf/go-maria/internal/pkg/file"
 	"gopkg.in/urfave/cli.v2"
 )
 
@@ -10,8 +11,11 @@ func Command() *cli.Command {
 }
 
 func execute(c *cli.Context) error {
-	if release.SkipPush(c){
-		return release.MajorVersion(true)
+	tomlFile := file.LoadTomlFile(file.GetAbsolutePath())
+	r := release.CreateRelease(tomlFile)
+	if r.SkipPush(c) {
+		return r.ReleaseMajor(false)
 	}
-	return release.MajorVersion(false)
+
+	return r.ReleaseMajor(true)
 }
