@@ -2,8 +2,8 @@ package git
 
 import (
 	"errors"
-	"fmt"
 	"github.com/solivaf/go-maria/internal/pkg/command"
+	"log"
 	"os/exec"
 	"strings"
 	"sync"
@@ -20,18 +20,22 @@ func Push() error {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		if _, _err := pushCommits(); _err != nil {
+		message, _err := pushCommits()
+		log.Println(message)
+		if _err != nil {
 			err = _err
-			fmt.Println(err.Error())
+			log.Fatal(err.Error())
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		if lastTag, _err := getLastTag(); _err == nil {
-			if _, _err := pushTag(lastTag); _err != nil {
+			message, _err := pushTag(lastTag);
+			log.Println(message)
+			if _err != nil {
 				err = _err
-				fmt.Println(err.Error())
+				log.Fatalln(err.Error())
 			}
 		}
 	}()
@@ -41,10 +45,16 @@ func Push() error {
 }
 
 func CommitChanges(message string) error {
-	if _, err := addUntrackedFiles(); err != nil {
+	log.Println("Committing git changes")
+	message, err := addUntrackedFiles()
+	log.Println(message)
+	if err != nil {
 		return err
 	}
-	if _, err := commitLocally(message); err != nil {
+
+	message, err = commitLocally(message)
+	log.Println(message)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -61,6 +71,7 @@ func GetLatestTag() (string, error) {
 }
 
 func CreateTag(tagName string) error {
+	log.Println("Creating tag " + tagName)
 	if _, err := createTag(tagName); err != nil {
 		return err
 	}

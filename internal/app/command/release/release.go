@@ -6,6 +6,7 @@ import (
 	"github.com/solivaf/go-maria/internal/pkg/command/git"
 	"github.com/solivaf/go-maria/internal/pkg/file"
 	"gopkg.in/urfave/cli.v2"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,6 +74,7 @@ func (r *ReleaseService) newVersion(versionIndex int, push bool) error {
 }
 
 func (r *ReleaseService) pushVersion() error {
+	log.Println("Starting version push")
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
@@ -86,6 +88,7 @@ func (r *ReleaseService) pushVersion() error {
 }
 
 func (r *ReleaseService) pushDocker(wg *sync.WaitGroup, err error) {
+	log.Println("Pushing docker image")
 	defer wg.Done()
 	if _, _err := r.Docker.ReleaseNewImage(); _err != nil {
 		err = _err
@@ -93,6 +96,7 @@ func (r *ReleaseService) pushDocker(wg *sync.WaitGroup, err error) {
 }
 
 func pushGit(wg *sync.WaitGroup, err error) {
+	log.Println("Pushing commits to origin master")
 	defer wg.Done()
 	if _err := git.Push(); _err != nil {
 		err = _err
@@ -101,6 +105,7 @@ func pushGit(wg *sync.WaitGroup, err error) {
 
 func (r *ReleaseService) version(index int) error {
 	versionReleased := r.getUpdatedVersionFromTomlFile(index, false)
+	log.Println("Releasing version " + versionReleased)
 	if err := r.updateTomlFileVersion(versionReleased); err != nil {
 		return err
 	}
@@ -116,6 +121,7 @@ func (r *ReleaseService) version(index int) error {
 
 func (r *ReleaseService) prepareToNextRelease(index int) error {
 	versionReleased := r.getUpdatedVersionFromTomlFile(index, true)
+	log.Println("Preparing to next releasing. Updating .goversion.toml")
 	if err := r.updateTomlFileVersion(versionReleased); err != nil {
 		return err
 	}
@@ -125,6 +131,7 @@ func (r *ReleaseService) prepareToNextRelease(index int) error {
 }
 
 func (r *ReleaseService) updateTomlFileVersion(version string) error {
+	log.Println("Updating .goversion.toml with version " + version)
 	module := r.FileTree.Get(file.ModuleKey).(*toml.Tree)
 	module.Set(file.ModuleVersionKey, version)
 	r.FileTree.Set(file.ModuleKey, module)
