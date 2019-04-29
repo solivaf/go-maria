@@ -9,11 +9,13 @@ import (
 )
 
 const (
-	fileName         = ".goversion.toml"
-	DockerKey        = "docker"
-	ModuleKey        = "module"
-	ModuleVersionKey = "version"
-	ModuleNameKey    = "name"
+	fileName                = ".goversion.toml"
+	DockerKey               = "docker"
+	DockerBuildDirectoryKey = "buildDirectory"
+	DockerComposeKey        = "dockerCompose"
+	DockerOrganizationKey   = "organization"
+	ModuleKey               = "module"
+	ModuleVersionKey        = "version"
 )
 
 func OpenFile(path string) *os.File {
@@ -66,8 +68,8 @@ func GetAbsolutePath() string {
 }
 
 func GetVersionFromTomlFile(tomlFile *toml.Tree) string {
-	module := tomlFile.Get("module").(*toml.Tree)
-	v := module.Get("version").(string)
+	module := tomlFile.Get(ModuleKey).(*toml.Tree)
+	v := module.Get(ModuleVersionKey).(string)
 	return v
 }
 

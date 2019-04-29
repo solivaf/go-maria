@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"github.com/pelletier/go-toml"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"path/filepath"
 	"testing"
 )
 
-const testData = "../../../../testdata/"
+const testData = "/tmp/"
 
 func TestCreateInitFile(t *testing.T) {
+	os.Remove("./.goversion.toml")
 	file, err := createInitFile(testData)
 	defer file.Close()
 

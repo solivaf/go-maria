@@ -1,20 +1,30 @@
 package docker
 
 import (
-	"errors"
 	"github.com/pelletier/go-toml"
 	"github.com/solivaf/go-maria/internal/pkg/command"
 	"github.com/solivaf/go-maria/internal/pkg/command/git"
-	"os/exec"
+	"github.com/solivaf/go-maria/internal/pkg/file"
+)
+
+const (
+	dockerCompose = "docker-compose"
+	dockerCommand = "docker"
 )
 
 type DockerService struct {
-	Tree *toml.Tree
+	Tree      *toml.Tree
+	Commander command.Commander
 }
 
 type Docker interface {
 	ReleaseNewImage() (string, error)
 	TagVersion(imageId, gitTag string) (string, error)
+	PushTag(tagName string) (string, error)
+}
+
+func CreateDocker(tree *toml.Tree) Docker {
+	return &DockerService{Tree: tree, Commander: &command.CommanderUnix{}}
 }
 
 func (docker *DockerService) ReleaseNewImage() (string, error) {
@@ -39,52 +49,37 @@ func (docker *DockerService) ReleaseNewImage() (string, error) {
 }
 
 func (docker *DockerService) buildImage() (imageId string, err error) {
-	buildDirectory := docker.Tree.Get("buildDirectory").(string)
-	isDockerCompose := docker.Tree.Get("dockerComposeFile").(bool)
+	buildDirectory := docker.Tree.Get(file.DockerBuildDirectoryKey).(string)
+	isDockerCompose := docker.Tree.Get(file.DockerComposeKey).(bool)
 
-	var dockerCommand string
-	if isDockerCompose {
-		dockerCommand = "docker-compose"
-	} else {
-		dockerCommand = "docker"
-	}
-	cmd := exec.Command(dockerCommand, "build", buildDirectory)
-	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
+	commandName := docker.getCommandName(isDockerCompose)
+	message, err := docker.Commander.Execute(commandName, "build", buildDirectory)
 
-	if err := cmd.Run(); err != nil {
-		return "", errors.New(stdErr.String())
-	}
-
-	return stdOut.String(), nil
+	return message, err
 }
 
 func (docker *DockerService) TagVersion(imageId, latestGitTag string) (string, error) {
 	tagName := docker.buildTagName(latestGitTag)
-
-	cmd := exec.Command("docker", "tag", imageId, tagName)
-	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
-	if err := cmd.Run(); err != nil {
-		return "", errors.New(stdErr.String())
-	}
-
-	return stdOut.String(), nil
+	return docker.Commander.Execute(dockerCommand, "tag", imageId, tagName)
 }
 
 func (docker *DockerService) PushTag(tagName string) (string, error) {
-	cmd := exec.Command("docker", "push", tagName)
-	stdOut, stdErr := command.GetStdOutAndStdErr(cmd)
-	if err := cmd.Run(); err != nil {
-		return "", errors.New(stdErr.String())
-	}
-	return stdOut.String(), nil
+	return docker.Commander.Execute(dockerCommand, "push", tagName)
 }
 
 func (docker *DockerService) buildTagName(latestGitTag string) string {
-	organization := docker.Tree.Get("organization").(string)
+	organization := docker.Tree.Get(file.DockerOrganizationKey).(string)
 	repository := docker.Tree.Get("repository").(string)
 	if docker.Tree.Has("tagPrefix") {
 		prefix := docker.Tree.Get("tagPrefix").(string)
 		return organization + "/" + repository + ":" + prefix + "-" + latestGitTag
 	}
 	return organization + "/" + repository + ":" + latestGitTag
+}
+
+func (docker *DockerService) getCommandName(isDockerCompose bool) string {
+	if isDockerCompose {
+		return dockerCompose
+	}
+	return dockerCommand
 }

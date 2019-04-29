@@ -36,7 +36,7 @@ type Release interface {
 func CreateRelease(tree *toml.Tree) Release {
 	r := &ReleaseService{FileTree: tree}
 	if tree.Has(file.DockerKey) {
-		r.Docker = &docker.DockerService{Tree: tree.Get(file.DockerKey).(*toml.Tree)}
+		r.Docker = docker.CreateDocker(tree)
 	}
 	return r
 }
@@ -63,7 +63,7 @@ func (r *ReleaseService) newVersion(versionIndex int, push bool) error {
 		return err
 	}
 
-	if err := r.prepareToNextRelease(versionIndex); err != nil {
+	if err := prepareToNextRelease(r.FileTree, versionIndex); err != nil {
 		log.Fatalln(err.Error())
 		return err
 	}
@@ -108,9 +108,9 @@ func pushGit(wg *sync.WaitGroup, err error) {
 }
 
 func (r *ReleaseService) version(index int) error {
-	versionReleased := r.getUpdatedVersionFromTomlFile(index, false)
+	versionReleased := getUpdatedVersionFromTomlFile(r.FileTree, index, false)
 	log.Println("Releasing version " + versionReleased)
-	if err := r.updateTomlFileVersion(versionReleased); err != nil {
+	if err := updateTomlFileVersion(r.FileTree, versionReleased); err != nil {
 		return err
 	}
 	commitMessage := git.ReleaseVersionCommitMessage(versionReleased)
@@ -123,10 +123,10 @@ func (r *ReleaseService) version(index int) error {
 	return nil
 }
 
-func (r *ReleaseService) prepareToNextRelease(index int) error {
-	versionReleased := r.getUpdatedVersionFromTomlFile(index, true)
+func prepareToNextRelease(tree *toml.Tree,index int) error {
+	versionReleased := getUpdatedVersionFromTomlFile(tree, index, true)
 	log.Println("Preparing to next releasing. Updating .goversion.toml")
-	if err := r.updateTomlFileVersion(versionReleased); err != nil {
+	if err := updateTomlFileVersion(tree, versionReleased); err != nil {
 		return err
 	}
 
@@ -134,22 +134,22 @@ func (r *ReleaseService) prepareToNextRelease(index int) error {
 	return git.CommitChanges(commitMessage)
 }
 
-func (r *ReleaseService) updateTomlFileVersion(version string) error {
+func updateTomlFileVersion(tree *toml.Tree, version string) error {
 	log.Println("Updating .goversion.toml with version " + version)
-	module := r.FileTree.Get(file.ModuleKey).(*toml.Tree)
+	module := tree.Get(file.ModuleKey).(*toml.Tree)
 	module.Set(file.ModuleVersionKey, version)
-	r.FileTree.Set(file.ModuleKey, module)
+	tree.Set(file.ModuleKey, module)
 
 	f := file.OpenFile(file.GetAbsolutePath())
-	if _, err := r.FileTree.WriteTo(f); err != nil {
+	if _, err := tree.WriteTo(f); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *ReleaseService) getUpdatedVersionFromTomlFile(index int, isSnapshot bool) string {
-	version := file.GetVersionFromTomlFile(r.FileTree)
+func getUpdatedVersionFromTomlFile(tree *toml.Tree, index int, isSnapshot bool) string {
+	version := file.GetVersionFromTomlFile(tree)
 	updatedVersion := getUpdatedVersionByIndex(version, index, isSnapshot)
 	return updatedVersion
 }

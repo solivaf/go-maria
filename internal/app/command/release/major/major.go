@@ -7,10 +7,10 @@ import (
 )
 
 func Command() *cli.Command {
-	return &cli.Command{Name: "major", Action: execute}
+	return &cli.Command{Name: "major", Action: Execute}
 }
 
-func execute(c *cli.Context) error {
+func Execute(c *cli.Context) error {
 	tomlFile := file.LoadTomlFile(file.GetAbsolutePath())
 	r := release.CreateRelease(tomlFile)
 	if r.SkipPush(c) {
