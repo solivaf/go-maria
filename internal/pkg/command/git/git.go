@@ -34,6 +34,7 @@ func CommitChanges(message string) error {
 	cmdMessage, err := addUntrackedFiles()
 	log.Println(cmdMessage)
 	if err != nil {
+		log.Fatalln(err.Error())
 		return err
 	}
 
