@@ -1,0 +1,9 @@
+
+[module]
+  name = "go-maria"
+  version = "v0.2.1-SNAPSHOT"
+
+[docker]
+  organization = "private-organization"
+  tagPrefix = "some-prefix"
+  repository = "repo-name"

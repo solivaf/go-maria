@@ -69,9 +69,9 @@ func (docker *DockerService) PushTag(tagName string) (string, error) {
 
 func (docker *DockerService) buildTagName(latestGitTag string) string {
 	organization := docker.Tree.Get(file.DockerOrganizationKey).(string)
-	repository := docker.Tree.Get("repository").(string)
-	if docker.Tree.Has("tagPrefix") {
-		prefix := docker.Tree.Get("tagPrefix").(string)
+	repository := docker.Tree.Get(file.DockerRepositoryKey).(string)
+	if docker.Tree.Has(file.DockerTagPrefixKey) {
+		prefix := docker.Tree.Get(file.DockerTagPrefixKey).(string)
 		return organization + "/" + repository + ":" + prefix + "-" + latestGitTag
 	}
 	return organization + "/" + repository + ":" + latestGitTag

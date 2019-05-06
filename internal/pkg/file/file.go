@@ -14,6 +14,8 @@ const (
 	DockerBuildDirectoryKey = "buildDirectory"
 	DockerComposeKey        = "dockerCompose"
 	DockerOrganizationKey   = "organization"
+	DockerRepositoryKey     = "repository"
+	DockerTagPrefixKey      = "tagPrefix"
 	ModuleKey               = "module"
 	ModuleVersionKey        = "version"
 )
