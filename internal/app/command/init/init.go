@@ -21,7 +21,7 @@ func Execute(c *cli.Context) error {
 	}
 
 	appName := c.Args().First()
-	templateFile, err := openInitTemplate(absPath, appName)
+	templateFile, err := openInitTemplate(appName)
 	if err != nil {
 		return err
 	}
@@ -36,8 +36,9 @@ func writeContent(source *toml.Tree, destination *os.File) {
 	}
 }
 
-func openInitTemplate(path, appName string) (*toml.Tree, error) {
-	tomlFile, err := toml.LoadFile(path + "/templates/init.toml")
+func openInitTemplate(appName string) (*toml.Tree, error) {
+	templatePath := file.GetTemplatesPath()
+	tomlFile, err := toml.LoadFile(templatePath + "init.toml")
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, err

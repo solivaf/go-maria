@@ -6,6 +6,7 @@ import (
 	"github.com/pelletier/go-toml"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 const (
@@ -67,6 +68,13 @@ func GetAbsolutePath() string {
 	p := os.Args[0]
 	absPath, _ := filepath.Abs(filepath.Dir(p))
 	return absPath
+}
+
+func GetTemplatesPath() string {
+	_, f, _, _ := runtime.Caller(2)
+	p, _ := filepath.Abs(filepath.Dir(f))
+	p += "/../../../../templates/"
+	return p
 }
 
 func GetVersionFromTomlFile(tomlFile *toml.Tree) string {
