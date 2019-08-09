@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	releaseMessage              = "[skip ci] [gomaria] - releasing version "
-	prepareToNextReleaseMessage = "[skip ci] [gomaria] - preparing for next release "
+	releaseMessage              = "[gomaria] - releasing version "
+	prepareToNextReleaseMessage = "[gomaria] - preparing for next release "
 )
 
 func Push() error {
